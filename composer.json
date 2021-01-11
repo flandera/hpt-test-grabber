@@ -1,0 +1,26 @@
+{
+    "name": "flandera/hp-test-grabber",
+    "description": "Test grabber",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Tomas Flandera",
+            "email": "flandera@volny.cz"
+        }
+    ],
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        }
+    },
+    "require": {
+        "willvincent/feeds": "dev-master",
+        "ext-dom": "*",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-simplexml": "*",
+        "ext-libxml": "*"
+    }
+}

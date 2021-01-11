@@ -1,0 +1,20 @@
+version: '3.6'
+services:
+  grabber:
+    image: webdevops/php-apache-dev:7.3
+    working_dir: /var/www
+    environment: ['WEB_DOCUMENT_ROOT=/var/www/html', 'WEB_DOCUMENT_INDEX=/var/www/html/index.php', 'PHP_IDE_CONFIG=serverName=grabber', 'PHP_DEBUGGER=xdebug', 'XDEBUG_REMOTE_AUTOSTART=1', 'XDEBUG_REMOTE_ENABLE=1', 'XDEBUG_REMOTE_CONNECT_BACK=0', 'XDEBUG_REMOTE_HOST=192.168.1.130', 'XDEBUG_REMOTE_PORT=9000', 'XDEBUG_IDEKEY=PHPSTORM', 'PM_MAX_REQUESTS=500', 'PHP_MEMORY_LIMIT=2G']
+    container_name: grabber
+    shm_size: 2g
+    volumes:
+      - ./:/var/www
+    ports:
+      - 8082:80
+    labels:
+      - traefik.http.routers.grabber.rule=Host(`www.grabber.org`)
+      - traefik.docker.network=default
+      - traefik.enable=true
+      - traefik.port=80
+      - traefik.default.protocol=http
+    networks:
+      - default
