@@ -30,12 +30,13 @@ class Dispatcher
     {
         $this->grabber = $grabber;
         $this->output  = $output;
-
     }//end __construct()
 
 
     /**
-     * @return string JSON
+     * Runs the Grabber
+     *
+     * @return void
      */
     public function run(): void
     {
@@ -46,14 +47,18 @@ class Dispatcher
                 $code  = $this->getCode($line);
                 $price = $this->grabber->getPrice($code);
                 if ($price !== 0.0) {
-                    $results[] = [
+                    $productName = $this->grabber->getProductName();
+                    $rating      = $this->grabber->getRating();
+                    $results[]   = [
                         $code => [
-                            'price' => number_format(
+                            'price'       => number_format(
                                 $price,
                                 self::DECIMALS_NUMBER,
                                 self::DECIMALS_SEPARATOR,
                                 self::THOUSANDS_SEPARATOR
                             ),
+                            'productName' => $productName,
+                            'rating'      => $rating,
                         ],
                     ];
                 } else {
@@ -70,16 +75,18 @@ class Dispatcher
 
         $this->output->setResults($results);
         fwrite(STDOUT, $this->output->getJson());
-
     }//end run()
 
 
+    /**
+     * Gets code from line
+     *
+     * @param string $line
+     * @return string
+     */
     private function getCode(string $line): string
     {
         $line = str_replace(["\n", "\r"], '', $line);
         return $line;
-
     }//end getCode()
-
-
 }//end class

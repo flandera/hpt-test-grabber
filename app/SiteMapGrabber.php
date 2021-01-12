@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App;
 
 use DOMXPath;
-use Psr\Log\LoggerInterface;
 
 class SiteMapGrabber implements IGrabber
 {
@@ -15,6 +14,7 @@ class SiteMapGrabber implements IGrabber
      * @var DOMXPath|null
      */
     private $xPath;
+
 
     /**
      * Get price for given code
@@ -28,8 +28,10 @@ class SiteMapGrabber implements IGrabber
         $pages = $this->getShopPages();
         foreach ($pages as $page) {
             if ($this->checkPageForCode($page, $productId) === true) {
-                $xpath = ($this->xPath ?? $this->getDom($page));
-                $price = $xpath->query("//div[contains(@class,'total-price')]//span[contains(@class, 'price-vatin')]");
+                $this->xPath = ($this->xPath ?? $this->getDom($page));
+                $price       = $this->xPath->query(
+                    "//div[contains(@class,'total-price')]//span[contains(@class, 'price-vatin')]"
+                );
                 if ($price !== false && $this->sanitizePrice($price) !== 0.0) {
                     $price = $this->sanitizePrice($price);
                     return $price;
@@ -40,6 +42,41 @@ class SiteMapGrabber implements IGrabber
         return $price;
 
     }//end getPrice()
+
+
+    /**
+     * Returns name of product
+     *
+     * @return string
+     */
+    public function getProductName(): string
+    {
+        $productName = 'Title not found';
+        $productNode = $this->xPath->document->getElementsByTagName('h1');
+        if ($productNode !== false) {
+            $productName = $this->sanitizeWhiteSpaces($productNode->item(0)->nodeValue);
+        }
+
+        return $productName;
+    }//end getProductName()
+
+
+    /**
+     * Gets rating of product
+     *
+     * @return string
+     */
+    public function getRating(): string
+    {
+        $rating     = 'Rating not found';
+        $ratingNode = $this->xPath->query("//span[contains(@class,'rating__label')]");
+        if ($ratingNode !== false) {
+            $rating = $ratingNode->item(0)->nodeValue;
+        }
+
+        return $rating;
+
+    }//end getRating()
 
 
     /**
@@ -72,7 +109,7 @@ class SiteMapGrabber implements IGrabber
     {
         $price = (string) $priceNode->item(0)->nodeValue;
         $price = preg_replace('/Kč/', '', $price);
-        $price = $this->sanitizeWhiteSpaces($price);
+        $price = $this->sanitizeSpecialWhiteSpaces($price);
         if (is_numeric($price) === true) {
             $price = (float) $price;
         } else {
@@ -119,7 +156,7 @@ class SiteMapGrabber implements IGrabber
     {
         $result      = false;
         $this->xPath = null;
-        if (strpos($page, strtolower($productId)) !== false) {
+        if (strpos($page, strtolower($productId)) === false) {
             $xpath        = $this->getDom($page);
             $internalCode = $xpath->query(
                 "//div[contains(@class,'pd-next-in-category__item pd-next-in-category__item--our-code')]"
@@ -131,6 +168,8 @@ class SiteMapGrabber implements IGrabber
                     $this->xPath = $xpath;
                 }
             }
+        } else {
+            $result = true;
         }
 
         return $result;
@@ -169,10 +208,25 @@ class SiteMapGrabber implements IGrabber
      * @param  string $text
      * @return string
      */
-    private function sanitizeWhiteSpaces(string $text): string
+    private function sanitizeSpecialWhiteSpaces(string $text): string
     {
         $result = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $text);
         return ($result ?? $text);
+
+    }//end sanitizeSpecialWhiteSpaces()
+
+
+    /**
+     * Removes double whitespaces
+     *
+     * @param  string $text
+     * @return string
+     */
+    private function sanitizeWhiteSpaces(string $text): string
+    {
+        $result  = preg_replace('/[\x00-\x1F\xFF]/', '', $text);
+        $result2 = preg_replace('/\s{2,}/', '', $result);
+        return ($result2 ?? $text);
 
     }//end sanitizeWhiteSpaces()
 
